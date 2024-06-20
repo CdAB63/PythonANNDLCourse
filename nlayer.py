@@ -12,7 +12,7 @@ from activation_function import ActivationFunction, SigmoidAF
 class NLayer:
     
     def __init__(self, nb_of_neurons,nb_of_inputs, activation_function=SigmoidAF(), 
-                         bias=0.0, learning_rate=0.1, prev_layer=None, next_layer=None):
+                         bias=0.0, learning_rate=0.1):
         if not isinstance(nb_of_neurons, int) or nb_of_neurons < 1:
             raise ValueError(f'[ERROR] invalid number of neurons {nb_of_neurons}')
         self.__nb_of_neurons = nb_of_neurons
@@ -28,12 +28,7 @@ class NLayer:
             raise ValueError(f'[ERROR] invalid bias: {bias}')
         self.__bias = bias
         self.__learning_rate = learning_rate
-        if prev_layer:
-            if not isinstance(prev_layer, type(self)):
-                raise ValueError(f'[ERROR] prev layer is {type(prev_layer)} and not {type(self)}')
-            self.__prev_layer = prev_layer
-        else:
-            self.__prev_layer = None
+        self.__prev_layer = None
         if next_layer:
             if not isinstance(next_layer, type(self)):
                 raise ValueError(f'[ERROR] next layer is {type(next_layer)} and not {type(self)}')
@@ -45,13 +40,35 @@ class NLayer:
         self.__output = None
         
     def number_of_neurons(self):
-        return self.__number_of_neurons
+        return self.__nb_of_neurons
+    
+    def number_of_inputs(self):
+        return self.__nb_of_inputs
     
     def neurons(self):
         return self.__neurons
     
     def neuron(self, idx):
         return self.__neurons[idx]
+   
+    def prev_layer(self):
+        return self.__prev_layer
     
+    def set_prev_layer(self, layer):
+        if layer:
+            if not isinstance(layer, type(self)):
+                raise ValueError(f'[ERROR] prev layer is {type(layer)} and not {type(self)}')
+            self.__prev_layer = layer
+        else:
+            self.__prev_layer = None
+            
+    def set_next_layer(self, layer):
+        if layer:
+            if not isinstance(layer, type(self)):
+                raise ValueError(f'[ERROR] next layer is {type(layer)} and not {type(self)}')
+            self.__next_layer = layer
+        else:
+            self.__next_layer = None
+            
     def feed(self, inputs):
         self.__output = [ n.feed(inputs) for n in self.__neurons ]
