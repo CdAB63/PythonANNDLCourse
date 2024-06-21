@@ -24,6 +24,8 @@ class NNetworkTestCase(unittest.TestCase):
         self.assertEqual(nn.tail(), nn.layer(3))
         self.assertEqual(nn.layer(0).next_layer(), nn.layer(1))
         self.assertEqual(nn.layer(3).prev_layer(), nn.layer(2))
+        out = nn.feed([1, -1])
+        print(f'RESULT: {out}')
         
 if __name__ == '__main__':
     unittest.main()

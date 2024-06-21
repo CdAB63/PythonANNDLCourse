@@ -80,3 +80,10 @@ class NNetwork:
     
     def tail(self):
         return self.__tail
+    
+    def feed(self, inputs):
+        try:
+            self.__output = self.__head.feed(inputs)
+        except Exception as e:
+            raise ValueError(f'[ERROR] cannot feed network. Is it initialized? {str(e)}')
+        return self.__output
