@@ -46,6 +46,18 @@ class Neuron:
         if not isinstance(x, float) or x <= 0.0 or x >= 1.0:
             raise ValueError(f'[ERROR] invalid learning_rate {x}')
         self.__learning_rate = x
+        
+    def weights(self):
+        return self.__weights
+    
+    def weight(self, idx):
+        return self.__weights[idx]
+    
+    def nb_of_weights(self):
+        if self.__weights:
+            return len(self.__weights)
+        else:
+            return 0
 
     def output(self):
         return self.__output
@@ -62,8 +74,8 @@ class Neuron:
         
     def train(self, inputs, desired_output):
         self.feed(inputs)
-        diff = desired_output - self.__output
-        self.__delta = diff * self.__activation_function.dx(self.__output)
+        self.__error = desired_output - self.__output
+        self.__delta = self.__error * self.__activation_function.dx(self.__output)
         for i, idx in zip(inputs, range(len(inputs))):
             self.__weights[idx] += self.__learning_rate * self.__delta * i
         self.__bias += self.__delta * self.__learning_rate
