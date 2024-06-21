@@ -44,7 +44,7 @@ class NNetwork:
         self.__head = None
         self.__tail = None
         self.__layers = []
-        for layer, idx in zip(layers, range(layers)):
+        for layer, idx in zip(layers, range(len(layers))):
             af = activation_functions[idx] if activation_functions else SigmoidAF()
             bias = biases[idx] if biases else 0.0
             lr = learning_rates[idx] if learning_rates else 0.1
@@ -63,10 +63,20 @@ class NNetwork:
     def layers(self):
         return self.__layers
     
+    def number_of_layers(self):
+        try:
+            return len(self.__layers)
+        except:
+            raise Exception('[ERROR] empty Neural Network. Define layers prior to calling this method')
+    
     def layer(self, idx):
         try:
             return self.__layers[idx]
         except:
             raise Exception('[ERROR] empty Neural Network. Define layers prior to calling this method')
-            
-            
+    
+    def head(self):
+        return self.__head
+    
+    def tail(self):
+        return self.__tail
