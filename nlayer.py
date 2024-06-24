@@ -98,5 +98,37 @@ class NLayer:
         return output
     
     def calculate_error(self, desired_values):
-        self.__error = [ d - o for d, o in zip(desired_values, self.__output) ]
-        return self.__error
+        if desired_values:
+            self.__error = [ d - o for d, o in zip(desired_values, self.__output) ]
+            for n, e in zip(self.__neurons, self.__error):
+                n.adjust_delta_with(e)
+            return self.__error
+        else:
+            self.__error = []
+            for neuron, idx in zip(self.__neurons, range(len(self.__neurons))):
+                the_error = 0
+                for next_neuron in self.__next_layer.neurons():
+                    the_error += next_neuron.weight(idx) * next_neuron.delta()
+                self.__error.append(the_error)
+                neuron.adjust_delta_with(the_error)
+            return self.__error
+            
+            
+    def backward_propagate_error(self, expected):
+        if expected:
+            self.calculate_error(expected)
+        else:            
+            self.__calculate_error(None)
+        if self.__prev_layer:
+            self.__prev_layer.backward_propagate_error(None)
+            
+    def update_weight(self, initial_inputs):
+        if initial_inputs:
+            for neuron in self.__neurons:
+                neuron.adjust_weight_with_input(initial_inputs)
+                neuron.adjust_bias()
+            if self.__next_layer:
+                self.__next_layer.update_weight(None)
+        else:
+            inputs = [ n.output() for n in self.__prev_layer.neurons() ]
+            self.update_weight(inputs)

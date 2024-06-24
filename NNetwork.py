@@ -87,3 +87,14 @@ class NNetwork:
         except Exception as e:
             raise ValueError(f'[ERROR] cannot feed network. Is it initialized? {str(e)}')
         return self.__output
+    
+    def backward_propagate_error(self, expected_outputs):
+        self.__tail.backward_propagate_error(expected_outputs)
+        
+    def update_weight(self, initial_inputs):
+        self.__head.update_weight(initial_inputs)
+        
+    def train(self, some_inputs, desired_outputs):
+        self.feed(some_inputs)
+        self.backward_propagate_error(desired_outputs)
+        self.update_weight(some_inputs)

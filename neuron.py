@@ -72,6 +72,16 @@ class Neuron:
         self.__output = self.__activation_function.fx(sum([i * w for i, w in zip(inputs, self.__weights)])+ self.__bias)
         return self.__output
         
+    def adjust_delta_with(self, an_error):
+        self.__delta = an_error * (self.__activation_function.dx(self.__output))
+        
+    def update_weight_with_input(self, inputs):
+        for an_input, idx in zip(inputs, range(len(inputs))):
+            self.__weights[idx] += self.__learning_rage * self.__delta * an_input
+            
+    def adjust_bias(self):
+        self.__bias += self.__learning_rate * self.__delta
+        
     def train(self, inputs, desired_output):
         self.feed(inputs)
         self.__error = desired_output - self.__output
