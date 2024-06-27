@@ -8,7 +8,7 @@ Created on Fri Jun  7 12:30:10 2024
 
 from math import exp
 
-class ActivationFunction:
+class ActivationFunction(object):
     
     def fx(self, x):
         pass

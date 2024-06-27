@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Fri Jun 21 16:09:02 2024
+Created on Tue Jun 25 21:28:48 2024
 
 @author: cdab63
 """
@@ -9,44 +9,40 @@ Created on Fri Jun 21 16:09:02 2024
 import unittest
 
 from nlayer import NLayer
-from activation_function import SigmoidAF, LinearAF
+from neuron import Neuron
+from activation_function import ActivationFunction, SigmoidAF
 
-class NLayerTests(unittest.TestCase):
+class NLayerTestCase(unittest.TestCase):
     
     def test_creation(self):
-        n1 = NLayer(3, 3)
-        self.assertEqual(len(n1.neurons()), 3)
-        self.assertEqual(len(n1.neurons()[0].weights()), 3)
-        self.assertEqual(type(n1.neurons()[0].activation_function()), SigmoidAF)
+        n1 = NLayer(2)
+        n2 = NLayer(3, prev_layer=n1)
+        n3 = NLayer(2, prev_layer=n2)
+        self.assertEqual(n1.number_of_neurons(), 2)
+        self.assertEqual(n1.number_of_weights(), 2)
+        self.assertEqual(n2.number_of_neurons(), 3)
+        self.assertEqual(n2.number_of_weights(), 2)
+        self.assertEqual(n3.number_of_neurons(), 2)
+        self.assertEqual(n3.number_of_weights(), 3)
         self.assertTrue(n1.prev_layer() is None)
-        self.assertTrue(n1.next_layer() is None)
-        
-        n2 = NLayer(5, 3)
-        n2.set_prev_layer(n1)
         self.assertEqual(n1.next_layer(), n2)
         self.assertEqual(n2.prev_layer(), n1)
+        self.assertEqual(n2.next_layer(), n3)
+        self.assertEqual(n3.prev_layer(), n2)
+        self.assertTrue(n3.next_layer() is None)
         
     def test_feed(self):
-        n1 = NLayer(2, 2, activation_function=LinearAF())
-        n2 = NLayer(3, 2, activation_function=LinearAF())
-        n2.set_prev_layer(n1)
-        w1 = [ n.weights() for n in n1.neurons() ]
-        w2 = [ n.weights() for n in n2.neurons() ]
-        output = n1.feed([1, 1])
-        self.assertEqual(len(output), 3)
-        o1 = [ n1.neuron(0).weight(0) + n1.neuron(0).weight(1), \
-               n1.neuron(1).weight(0) + n1.neuron(1).weight(1) ]
-        self.assertEqual(n1.output(), o1)
-        o2 = [ n2.neuron(0).weight(0) * o1[0] + n2.neuron(0).weight(1) * o1[1],
-               n2.neuron(1).weight(0) * o1[0] + n2.neuron(1).weight(1) * o1[1],
-               n2.neuron(2).weight(0) * o1[0] + n2.neuron(2).weight(1) * o1[1]]
-        self.assertEqual(output, o2)
-        print(f'N1 Weights: {w1}')
-        print(f'N2 Weights: {w2}')
-        print(f'Output n1: {o1}')
-        print(f'Output n2: {o2}')
-        
+        n1 = NLayer(2)
+        n2 = NLayer(2, prev_layer=n1)
+        output = n1.feed([1.0, 1.0])
+        print(f'General: {output}')
+        print(f'layer 1: {n1.output()}')
+        print(f'layer 2: {n2.output()}')
+        output1 = n1.feed_layer([1.0, 1.0])
+        print(f'Feed 1: {n1.output()}')
+        output2 = n2.feed_layer(output1)
+        print(f'Feed 2: {n2.output()}')
+        self.assertEqual(output, output2)
         
 if __name__ == '__main__':
     unittest.main()
-        

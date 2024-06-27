@@ -1,134 +1,138 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Thu Jun 20 16:00:44 2024
+Created on Tue Jun 25 16:36:56 2024
 
 @author: cdab63
 """
 
-from neuron import Neuron
 from activation_function import ActivationFunction, SigmoidAF
+from neuron import Neuron
 
-class NLayer:
+
+class NLayer(object):
     
-    def __init__(self, nb_of_neurons, nb_of_inputs, 
-                 activation_function=SigmoidAF(), 
-                 bias=0.0, learning_rate=0.1):
+    def __init__(self, nb_of_neurons, activation_function=SigmoidAF(),
+                 bias=0.0, learning_rate=0.1, prev_layer=None, next_layer=None):
+        # check arguments
         if not isinstance(nb_of_neurons, int) or nb_of_neurons < 1:
-            raise ValueError(f'[ERROR] invalid number of neurons {nb_of_neurons}')
-        self.__nb_of_neurons = nb_of_neurons
-        if not isinstance(nb_of_inputs, int) or nb_of_inputs < 1:
-            raise ValueError(f'[ERROR] invalid number of inputs {nb_of_inputs}')
-        self.__nb_of_inputs = nb_of_inputs
+            raise ValueError('[ERROR] invalid number of neurons')
         if not issubclass(type(activation_function), ActivationFunction):
-            raise ValueError(f'[ERROR] invalid activation function: {type(activation_function)}')
+            raise ValueError('[ERROR] invalid activation function')
+        if not isinstance(bias, float):
+            raise ValueError('[ERROR] invalid bias (should be a float)')
+        if not isinstance(learning_rate, float) or learning_rate <= 0.0 or \
+           learning_rate >= 1.0:
+            raise ValueError('[ERROR] invalid learning rate')
+        if prev_layer:
+            if not isinstance(prev_layer, type(self)):
+                raise ValueError('[ERROR] invalid prev_layer')
+        if next_layer:
+            if not isinstance(next_layer, type(self)):
+                raise ValueError('[ERROR] invalid next_layer')
+        # create neurons
+        self.__neurons = []
+        nb_of_inputs = prev_layer.number_of_neurons() if prev_layer else nb_of_neurons
+        for _ in range(nb_of_neurons):
+            neuron = Neuron(nb_of_inputs, activation_function=activation_function, 
+                            learning_rate=learning_rate, bias=bias)
+            self.__neurons.append(neuron)
+        self.__nb_of_neurons = nb_of_neurons
+        self.__nb_of_weights = nb_of_inputs
+        self.__prev_layer = prev_layer
+        self.__next_layer = next_layer
+        if prev_layer:
+            prev_layer.set_next_layer(self)
+        if next_layer:
+            next_layer.set_prev_layer(self)
         self.__activation_function = activation_function
-        if not isinstance(learning_rate, float) or learning_rate <= 0.0 or learning_rate >= 1.0:
-            raise ValueError(f'[ERROR] invalid learning rate: {learning_rate}')
-        if not isinstance(bias, (int, float)):
-            raise ValueError(f'[ERROR] invalid bias: {bias}')
-        self.__bias = bias
         self.__learning_rate = learning_rate
-        self.__neurons = [ Neuron(self.__nb_of_inputs,
-                                  activation_function=self.__activation_function,
-                                  bias=self.__bias,
-                                  learning_rate=self.__learning_rate) for _ in range(self.__nb_of_neurons) ]
-        self.__prev_layer = None
-        self.__next_layer = None
+        self.__bias = bias
+        self.__error = []
         self.__output = None
-        self.__error = None
         
-    def number_of_neurons(self):
-        return self.__nb_of_neurons
+    def prev_layer(self):
+        return self.__prev_layer
     
-    def number_of_inputs(self):
-        return self.__nb_of_inputs
+    def set_prev_layer(self, layer):
+        if layer:
+            if not isinstance(layer, type(self)):
+                raise ValueError('[ERROR] invalid prev_layer')
+            if layer.number_of_neurons() != self.number_of_weights():
+                raise ValueError('[ERROR] incompatible prev_layer')
+            layer.__blind_set_next_layer(self)
+        self.__prev_layer = layer
+
+    def __blind_set_prev_layer(self, layer):
+        self.__prev_layer = layer
+        
+    def next_layer(self):
+        return self.__next_layer
     
+    def set_next_layer(self, layer):
+        if layer:
+            if not isinstance(layer, type(self)):
+                raise ValueError('[ERROR] invalid next_layer')
+            if layer.number_of_weights() != self.number_of_neurons():
+                raise ValueError('[ERROR] incompatible next_layer')
+            layer.__blind_set_prev_layer(self)
+        self.__next_layer = layer
+    
+    def __blind_set_next_layer(self, layer):
+        self.__next_layer = layer
+        
     def neurons(self):
         return self.__neurons
     
     def neuron(self, idx):
         return self.__neurons[idx]
-   
-    def prev_layer(self):
-        return self.__prev_layer
     
-    def next_layer(self):
-        return self.__next_layer
+    def number_of_neurons(self):
+        return self.__nb_of_neurons
     
-    def set_prev_layer(self, layer, recurse=True):
-        if layer:
-            if layer == self:
-                raise ValueError('[ERROR] prev_layer and self are the same')
-            if not isinstance(layer, type(self)):
-                raise ValueError(f'[ERROR] prev_layer is not {type(self)}')
-            if self.__nb_of_inputs != layer.number_of_neurons():
-                raise ValueError(f'[ERROR] prev_layer wrong size {layer.number_of_neurons()}')
-            self.__prev_layer = layer
-            if recurse:
-                layer.set_next_layer(self, recurse=False)
-        else:
-            self.__prev_layer = None
+    def number_of_weights(self):
+        return self.__nb_of_weights
+    
+    def activation_function(self):
+        return self.__activation_function
+    
+    def set_activation_function(self, activation_function):
+        if not issubclass(type(activation_function), ActivationFunction):
+            raise ValueError(f'[ERROR] invalid activation finction {type(activation_function)}')
+        self.__activation_function = activation_function
+        for neuron in self.__neurons:
+            neuron.set_activation_function(activation_function)
             
-    def set_next_layer(self, layer, recurse=True):
-        if layer:
-            if layer == self:
-                raise ValueError('[ERROR] next_layer and self are the same')
-            if not isinstance(layer, type(self)):
-                raise ValueError(f'[ERROR] next_layer is not {type(self)}')
-            if self.__nb_of_neurons != layer.number_of_inputs():
-                raise ValueError(f'[ERROR] next_layer wrong size {layer.number_of_inputs()}')
-            self.__next_layer = layer
-            if recurse:
-                layer.set_prev_layer(self, recurse=False)
-        else:
-            self.__next_layer = None
-
+    def learning_rate(self):
+        return self.__learning_rate
+    
+    def set_learning_rate(self, value):
+        if not isinstance(value, float) or value <= 0.0 or value >= 1.0:
+            raise ValueError(f'[ERROR] invalid learning rate: {value}')
+        self.__learning_rate = value
+        for neuron in self.__neurons:
+            neuron.set_learning_rate(value)
+            
+    def bias(self):
+        return self.__bias
+    
+    def set_bias(self, value):
+        if not isinstance(value, float):
+            raise ValueError(f'[ERROR] invalid bias: {value}')
+        self.__bias = value
+        for neuron in self.__neurons:
+            neuron.set_bias(value)
+    
     def output(self):
         return self.__output
     
-    def feed_layer(self, inputs):
-        self.__output = [ n.feed(inputs) for n in self.__neurons ]
-        return self.__output
-        
     def feed(self, inputs):
-        output = self.feed_layer(inputs)
+        self.__output = [ neuron.feed(inputs) for neuron in self.__neurons ]
+        output = self.__output
         if self.__next_layer:
             output = self.__next_layer.feed(output)
         return output
-    
-    def calculate_error(self, desired_values):
-        if desired_values:
-            self.__error = [ d - o for d, o in zip(desired_values, self.__output) ]
-            for n, e in zip(self.__neurons, self.__error):
-                n.adjust_delta_with(e)
-            return self.__error
-        else:
-            self.__error = []
-            for neuron, idx in zip(self.__neurons, range(len(self.__neurons))):
-                the_error = 0
-                for next_neuron in self.__next_layer.neurons():
-                    the_error += next_neuron.weight(idx) * next_neuron.delta()
-                self.__error.append(the_error)
-                neuron.adjust_delta_with(the_error)
-            return self.__error
-            
-            
-    def backward_propagate_error(self, expected):
-        if expected:
-            self.calculate_error(expected)
-        else:            
-            self.__calculate_error(None)
-        if self.__prev_layer:
-            self.__prev_layer.backward_propagate_error(None)
-            
-    def update_weight(self, initial_inputs):
-        if initial_inputs:
-            for neuron in self.__neurons:
-                neuron.adjust_weight_with_input(initial_inputs)
-                neuron.adjust_bias()
-            if self.__next_layer:
-                self.__next_layer.update_weight(None)
-        else:
-            inputs = [ n.output() for n in self.__prev_layer.neurons() ]
-            self.update_weight(inputs)
+        
+    def feed_layer(self, inputs):
+        self.__output = [ neuron.feed(inputs) for neuron in self.__neurons ]
+        return self.__output
