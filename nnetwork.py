@@ -18,7 +18,13 @@ class NNetwork(object):
         self.__tail = None
         self.__learning_rate = 0.1
         self.__layers = []
-        
+        self.__errors = []
+        self.__precisions = []
+    
+    '''
+        ACCESSOR METHODS
+    '''
+    
     def head(self):
         return self.__head
     
@@ -30,6 +36,16 @@ class NNetwork(object):
     
     def layer(self, idx):
         return self.__layers[idx]
+    
+    def errors(self):
+        return self.__errors
+    
+    def precisions(self):
+        return self.__precisions
+
+    '''
+        NEURAL NETWORK SETUP METHODS
+    '''
     
     def create_layer(self, neurons, activation_function=SigmoidAF(),
                      bias=0.0, learning_rate=0.1):
@@ -65,7 +81,26 @@ class NNetwork(object):
             self.__layers.append(layer)
             self.__head = layer
             self.__tail = layer
-            
+    
+    '''
+        NEURAL NETWORD EVALUATION (FEED) METHODS
+    '''
+    
     def feed(self, inputs):
         self.__output = self.__head.feed(inputs)
         return self.__output
+    
+    '''
+        TRAINING METHODS
+    '''
+    
+    def backward_propagate_error(self, expected_outputs):
+        self.__tail.backward_propagate_error(expected_outputs)
+        
+    def update_weights(self, initial_inputs):
+        self.__head.update_weights(initial_inputs)
+        
+    def train(self, some_inputs, desired_outputs):
+        self.feed(some_inputs)
+        self.backward_propagate_error(desired_outputs)
+        self.update_weights(some_inputs)

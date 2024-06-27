@@ -53,6 +53,24 @@ class NNetworkTestCase(unittest.TestCase):
         output = nnetwork.feed([1.0, 1.0])
         self.assertEqual(output, [4.0])
         
+    def test_train_xor(self):
+        
+        nnetwork = NNetwork()
+        l1 = nnetwork.create_layer(2)
+        nnetwork.add_layer(l1)
+        l2 = nnetwork.create_layer(3)
+        nnetwork.add_layer(l2)
+        l3 = nnetwork.create_layer(1)
+        nnetwork.add_layer(l3)
+        for _ in range(20000):
+            nnetwork.train([0.0, 0.0], [0.0])
+            nnetwork.train([0.0, 1.0], [1.0])
+            nnetwork.train([1.0, 0.0], [1.0])
+            nnetwork.train([1.0, 1.0], [0.0])
+        self.assertAlmostEqual(nnetwork.feed([0.0, 0.0])[0], 0.0, delta=0.25)
+        self.assertAlmostEqual(nnetwork.feed([0.0, 1.0])[0], 1.0, delta=0.25)
+        self.assertAlmostEqual(nnetwork.feed([1.0, 0.0])[0], 1.0, delta=0.25)
+        self.assertAlmostEqual(nnetwork.feed([1.0, 1.0])[0], 0.0, delta=0.25)
 if __name__ == '__main__':
     unittest.main()
         

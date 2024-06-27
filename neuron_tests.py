@@ -64,13 +64,10 @@ class NeuronTestCase(unittest.TestCase):
         self.assertEqual(error, test_error)
         
     def test_train_and(self):
-        neuron = Neuron([-1.0, -1.0], activation_function=LinearAF(), learning_rate=0.1, bias=2.0)
-        self.assertEqual(neuron. learning_rate(), 0.1)
-        self.assertEqual(neuron.bias(), 2.0)
-        self.assertEqual(neuron.weights(), [-1.0, -1.0])
-        self.assertTrue(isinstance(neuron.activation_function(), LinearAF))
+        neuron = Neuron(2, learning_rate=0.01)
         error = []
-        for _ in range(100):
+        print(f'ORIGINAL WEIGHTS: {neuron.weights()}')
+        for _ in range(450):
             neuron.train([0.0, 0.0], 0.0)
             e1 = neuron.error()
             neuron.train([0.0, 1.0], 0.0)
@@ -88,12 +85,10 @@ class NeuronTestCase(unittest.TestCase):
         plt.title('Training Error Curve')
         plt.legend()
         plt.show()
-        self.assertAlmostEqual(neuron.feed([0.0, 0.0]), 0.0, delta=0.3)
-        self.assertAlmostEqual(neuron.feed([0.0, 1.0]), 0.0, delta=0.3)
-        self.assertAlmostEqual(neuron.feed([1.0, 0.0]), 0.0, delta=0.3)
-        self.assertAlmostEqual(neuron.feed([1.0, 1.0]), 1.0, delta=0.3)
-        
-
+        self.assertAlmostEqual(neuron.feed([0.0, 0.0]), 0.0, delta=0.15)
+        self.assertAlmostEqual(neuron.feed([0.0, 1.0]), 0.0, delta=0.15)
+        self.assertAlmostEqual(neuron.feed([1.0, 0.0]), 0.0, delta=0.15)
+        self.assertAlmostEqual(neuron.feed([1.0, 1.0]), 1.0, delta=0.15)
         
 if __name__ == '__main__':
     unittest.main()

@@ -14,59 +14,67 @@ class Neuron(object):
     
     def __init__(self, weights, activation_function=SigmoidAF(), bias=0.0,
                  learning_rate=0.1):
+        self.set_weights(weights)
         self.set_activation_function(activation_function)
         self.set_bias(bias)
         self.set_learning_rate(learning_rate)
-        if isinstance(weights, int):
-            self.set_random_weights(weights)
-        else:
-            self.set_listed_weights(weights)
         self.__output = None
-        self.__error  = None
-        self.__delta  = None
+        self.__error = None
+        self.__delta = None
         
-    def set_random_weights(self, number, min_max=(-1.0, 1.0)):
-        if not isinstance(number, int) or number < 1:
-            raise ValueError(f'[ERROR] invalid number of weights: {number}')
-        self.__weights = [ random.uniform(min_max[0], min_max[1]) for _ in range(number)]
-        
-    def set_listed_weights(self, the_weights):
-        if not all(isinstance(weight, float) for weight in the_weights):
-            raise ValueError('[ERROR] all weights must be floats')
-        self.__weights = the_weights
-        
-    def number_of_weights(self):
-        return len(self.__weights)
-    
+    '''
+    ACCESSOR METHODS
+    '''
+
     def weights(self):
         return self.__weights
     
     def weight(self, idx):
         return self.__weights[idx]
-
-    def set_weight(self, idx, value):
-        if not isinstance(value, float) or not isinstance(idx, int) or idx < 0:
-            raise ValueError(f'[ERROR] invalid parameters {idx}, {value}')
-        self.__weights[idx] = value
-        
-    def set_weights(self, new_weights):
-        if len(new_weights) != len(self.__weights):
-            raise ValueError('[ERROR] different dimensions of current weights and new_weights')
-        self.__weights = new_weights.copy()
     
+    def set_random_weights(self, number_of_weights):
+        if number_of_weights < 1:
+            raise ValueError(f'[ERROR] invalid number of weights: {number_of_weights}')
+        self.__weights = [ random.uniform(-1.0, 1.0) for _ in range(number_of_weights) ]
+        
+    def set_listed_weights(self, listed_weights):
+        if not isinstance(listed_weights, list):
+            raise ValueError('[ERROR] invalid weights (not a list)')
+        if not all(isinstance(item, (int, float)) for item in listed_weights):
+            raise ValueError('[ERROR] not all weights are floats')
+        self.__weights = listed_weights.copy()
+        
+    def set_weights(self, weights):
+        if isinstance(weights, int):
+            self.set_random_weights(weights)
+        else:
+            self.set_listed_weights(weights)
+            
+    def number_of_weights(self):
+        return len(self.__weights)
+
+            
     def activation_function(self):
         return self.__activation_function
     
-    def af_fx(self, value):
-        return self.__activation_function.fx(value)
+    def af_fx(self, x):
+        return self.__activation_function.fx(x)
+        
+    def af_dx(self, x):
+        return self.__activation_function.dx(x)
     
-    def af_dx(self, value):
-        return self.__activation_function.dx(value)
+    def set_activation_function(self, af):
+        if not issubclass(type(af), ActivationFunction):
+            raise ValueError(f'[ERROR] not a valid activation function: {type(af)}')
+        self.__activation_function = af
+        
+    def bias(self):
+        return self.__bias
     
-    def set_activation_function(self, activation_function):
-        if not issubclass(type(activation_function), ActivationFunction):
-            raise ValueError(f'[ERROR] invalid activation function: {type(activation_function)}')
-        self.__activation_function = activation_function
+    def set_bias(self, value):
+        if not isinstance(value, (int, float)):
+            raise ValueError(f'[ERROR] invalid bias: {value}')
+        self.__bias = value
         
     def learning_rate(self):
         return self.__learning_rate
@@ -76,55 +84,55 @@ class Neuron(object):
             raise ValueError(f'[ERROR] invalid learning rate: {value}')
         self.__learning_rate = value
         
-    def bias(self):
-        return self.__bias
-    
-    def set_bias(self, value):
-        if not isinstance(value, float):
-            raise ValueError(f'[ERROR] invalid bias: {value}')
-        self.__bias = value
-        
     def output(self):
         return self.__output
-    
-    def delta(self):
-        return self.__delta
     
     def error(self):
         return self.__error
     
-    def feed(self, values):
-        if len(values) != len(self.__weights):
-            raise ValueError(f'[ERROR] inputs and weights should have same dimension but: {len(values)} vs {len(self.__weights)}')
-        self.__output = self.af_fx(sum([w * i for w, i in zip(self.weights(), values)])) + self.__bias
-        return self.__output
+    def delta(self):
+        return self.__delta
         
-    # Training stuff
-    def adjust_error(self, expected_value):
-        self.__error = expected_value - self.__output
+    '''
+    FEED
+    '''
+    def feed(self, inputs):
+        if not isinstance(inputs, list) or len(inputs) != len(self.__weights):
+            raise ValueError('[ERROR] invalid inputs: {inputs}')
+        s1 = sum([ w * i for w, i in zip(self.__weights, inputs)])
+        fx = self.af_fx(s1)
+        out = fx + self.__bias
+        self.__output = out
+        return out
+    
+    '''
+    TRAIN STUFF
+    '''
+    
+    def adjust_error(self, value):
+        self.__error = value - self.__output
         
     def adjust_delta(self):
-        self.__delta = self.error() * self.af_dx(self.output())
+        self.__delta = self.__error * self.af_dx(self.__output)
         
-    def adjust_weights(self, values):
-        if len(values) != len(self.weights()):
-            raise ValueError('[ERROR] incompatible inputs vs weights vector sizes')
-        self.__weights = [ weight + (self.learning_rate() * self.delta() * value) \
-                           for weight, value in zip(self.weights(), values) ]  
-            
+    def adjust_delta_with(self, an_error):
+        self.__delta = an_error * self.af_dx(self.__output)
+        
     def adjust_bias(self):
-        self.__bias += self.learning_rate() * self.delta()
+        self.__bias += self.__learning_rate * self.__delta
         
-    def train(self, values, expected_output):
-        self.feed(values) # feed the values
-        self.adjust_error(expected_output) # set the error
-        self.adjust_delta() # adjust weights correction parameter
-        self.adjust_weights(values) # adjust the weights
-        self.adjust_bias() # adjust bias
+    def adjust_weights(self, inputs):
+        for an_input, idx in zip(inputs, range(len(inputs))):
+            self.__weights[idx] += self.__learning_rate * self.__delta * an_input
+        
+    def train(self, inputs, desired_output):
+        self.feed(inputs)
+        self.adjust_error(desired_output)
+        self.adjust_delta()
+        for an_input, idx in zip(inputs, range(len(inputs))):
+            self.__weights[idx] += self.__learning_rate * self.__delta * an_input
+        self.adjust_bias()
         
         
         
-        
-        
-    
-    
+                                   

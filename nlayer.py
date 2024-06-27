@@ -136,3 +136,33 @@ class NLayer(object):
     def feed_layer(self, inputs):
         self.__output = [ neuron.feed(inputs) for neuron in self.__neurons ]
         return self.__output
+    
+    def backward_propagate_error(self, expected):
+        self.__error = []
+        if expected:
+            for neuron, exp in zip(self.__neurons, expected):
+                the_error = exp - neuron.output()
+                neuron.adjust_delta_with(the_error)
+                self.__error.append(the_error)
+            if self.__prev_layer:
+                self.__prev_layer.backward_propagate_error(None)
+        else:
+            for n, idx in zip(self.__neurons, range(len(self.__neurons))):
+                the_error = 0.0
+                for next_neuron in self.__next_layer.neurons():
+                    the_error += next_neuron.weight(idx) * next_neuron.delta()
+                n.adjust_delta_with(the_error)
+                self.__error.append(the_error)
+            if self.__prev_layer:
+                self.__prev_layer.backward_propagate_error(None)
+                
+    def update_weights(self, inputs):
+        if inputs:
+            for n in self.__neurons:
+                n.adjust_weights(inputs)
+                n.adjust_bias()
+            if self.__next_layer:
+                self.__next_layer.update_weights(None)
+        else:
+            inp = self.__prev_layer.output()
+            self.update_weights(inp)
