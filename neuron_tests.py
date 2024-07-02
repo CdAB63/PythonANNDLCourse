@@ -64,31 +64,36 @@ class NeuronTestCase(unittest.TestCase):
         self.assertEqual(error, test_error)
         
     def test_train_and(self):
-        neuron = Neuron(2, learning_rate=0.01)
-        error = []
-        print(f'ORIGINAL WEIGHTS: {neuron.weights()}')
-        for _ in range(450):
+        neuron = Neuron(2, learning_rate=0.1)
+        for _ in range(5000):
             neuron.train([0.0, 0.0], 0.0)
-            e1 = neuron.error()
             neuron.train([0.0, 1.0], 0.0)
-            e2 = neuron.error()
             neuron.train([1.0, 0.0], 0.0)
-            e3 = neuron.error()
             neuron.train([1.0, 1.0], 1.0)
-            e4 = neuron.error()
-            fe = (abs(e1) + abs(e2) + abs(e3) + abs(e4))/4.0
-            error.append(fe)
+        self.assertAlmostEqual(neuron.feed([0.0, 0.0]), 0.0, delta=0.1)
+        self.assertAlmostEqual(neuron.feed([0.0, 1.0]), 0.0, delta=0.1)
+        self.assertAlmostEqual(neuron.feed([1.0, 0.0]), 0.0, delta=0.1)
+        self.assertAlmostEqual(neuron.feed([1.0, 1.0]), 1.0, delta=0.1)
         
-        plt.plot(error,label='Average Error')
-        plt.xlabel('Epoch')
-        plt.ylabel('Average Error')
-        plt.title('Training Error Curve')
-        plt.legend()
-        plt.show()
-        self.assertAlmostEqual(neuron.feed([0.0, 0.0]), 0.0, delta=0.15)
-        self.assertAlmostEqual(neuron.feed([0.0, 1.0]), 0.0, delta=0.15)
-        self.assertAlmostEqual(neuron.feed([1.0, 0.0]), 0.0, delta=0.15)
-        self.assertAlmostEqual(neuron.feed([1.0, 1.0]), 1.0, delta=0.15)
+    def test_train_or(self):
+        neuron = Neuron(2, learning_rate=0.1)
+        for _ in range(5000):
+            neuron.train([0.0, 0.0], 0.0)
+            neuron.train([0.0, 1.0], 1.0)
+            neuron.train([1.0, 0.0], 1.0)
+            neuron.train([1.0, 1.0], 1.0)
+        self.assertAlmostEqual(neuron.feed([0.0, 0.0]), 0.0, delta=0.1)
+        self.assertAlmostEqual(neuron.feed([0.0, 1.0]), 1.0, delta=0.1)
+        self.assertAlmostEqual(neuron.feed([1.0, 0.0]), 1.0, delta=0.1)
+        self.assertAlmostEqual(neuron.feed([1.0, 1.0]), 1.0, delta=0.1)
+
+    def test_train_not(self):
+        neuron = Neuron(1, learning_rate=0.1)
+        for i in range(5000):
+            neuron.train([0.0], 1.0)
+            neuron.train([1.0], 0.0)
+        self.assertAlmostEqual(neuron.feed([0.0]), 1.0, delta=0.1)
+        self.assertAlmostEqual(neuron.feed([1.0]), 0.0, delta=0.1)
         
 if __name__ == '__main__':
     unittest.main()

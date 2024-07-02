@@ -6,21 +6,37 @@ Created on Tue Jun 25 22:34:16 2024
 @author: cdab63
 """
 
-import json
-
 from activation_function import ActivationFunction, SigmoidAF
 from nlayer import NLayer
 
 class NNetwork(object):
     
-    def __init__(self):
+    def __init__(self, layers=None, activation_functions=None, learning_rate=0.1):
         self.__head = None
         self.__tail = None
-        self.__learning_rate = 0.1
+        self.__learning_rate = learning_rate
         self.__layers = []
+        if layers is None:
+            pass
+        elif all(isinstance(item, NLayer) for item in layers):
+            for layer in layers:
+                if self.__tail:
+                    layer.set_prev_layer(self.__tail)
+                self.add_layer(layer)
+        elif all(isinstance(item, int) for item in layers) and \
+             all(issubclass(type(item), ActivationFunction) for item in activation_functions) and \
+             len(layers) == len(activation_functions):
+                 for l, af in zip(layers, activation_functions):
+                     if self.__tail:
+                         layer = NLayer(l, activation_function=af, learning_rate=learning_rate, prev_layer=self.__tail)
+                     else:
+                         layer = NLayer(l, activation_function=af, learning_rate=learning_rate)
+                     self.add_layer(layer)
+        else:
+            raise ValueError('[ERROR] invalid parameters')
         self.__errors = []
         self.__precisions = []
-    
+        
     '''
         ACCESSOR METHODS
     '''

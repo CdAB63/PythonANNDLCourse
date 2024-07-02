@@ -99,11 +99,8 @@ class Neuron(object):
     def feed(self, inputs):
         if not isinstance(inputs, list) or len(inputs) != len(self.__weights):
             raise ValueError('[ERROR] invalid inputs: {inputs}')
-        s1 = sum([ w * i for w, i in zip(self.__weights, inputs)])
-        fx = self.af_fx(s1)
-        out = fx + self.__bias
-        self.__output = out
-        return out
+        self.__output = self.af_fx(sum([ w * i for w, i in zip(self.__weights, inputs)]) + self.__bias)
+        return self.__output
     
     '''
     TRAIN STUFF
@@ -129,8 +126,7 @@ class Neuron(object):
         self.feed(inputs)
         self.adjust_error(desired_output)
         self.adjust_delta()
-        for an_input, idx in zip(inputs, range(len(inputs))):
-            self.__weights[idx] += self.__learning_rate * self.__delta * an_input
+        self.adjust_weights(inputs)
         self.adjust_bias()
         
         

@@ -126,9 +126,11 @@ class NLayer(object):
     def output(self):
         return self.__output
     
+    def error(self):
+        return self.__error
+    
     def feed(self, inputs):
-        self.__output = [ neuron.feed(inputs) for neuron in self.__neurons ]
-        output = self.__output
+        output = self.feed_layer(inputs)
         if self.__next_layer:
             output = self.__next_layer.feed(output)
         return output
@@ -147,22 +149,22 @@ class NLayer(object):
             if self.__prev_layer:
                 self.__prev_layer.backward_propagate_error(None)
         else:
-            for n, idx in zip(self.__neurons, range(len(self.__neurons))):
+            for neuron, idx in zip(self.__neurons, range(len(self.__neurons))):
                 the_error = 0.0
                 for next_neuron in self.__next_layer.neurons():
                     the_error += next_neuron.weight(idx) * next_neuron.delta()
-                n.adjust_delta_with(the_error)
+                neuron.adjust_delta_with(the_error)
                 self.__error.append(the_error)
             if self.__prev_layer:
                 self.__prev_layer.backward_propagate_error(None)
                 
     def update_weights(self, inputs):
         if inputs:
-            for n in self.__neurons:
-                n.adjust_weights(inputs)
-                n.adjust_bias()
+            for neuron in self.__neurons:
+                neuron.adjust_weights(inputs)
+                neuron.adjust_bias()
             if self.__next_layer:
                 self.__next_layer.update_weights(None)
         else:
-            inp = self.__prev_layer.output()
+            inp = [ n.output() for n in self.__prev_layer.neurons() ]
             self.update_weights(inp)

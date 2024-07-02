@@ -9,8 +9,6 @@ Created on Tue Jun 25 21:28:48 2024
 import unittest
 
 from nlayer import NLayer
-from neuron import Neuron
-from activation_function import ActivationFunction, SigmoidAF
 
 class NLayerTestCase(unittest.TestCase):
     
