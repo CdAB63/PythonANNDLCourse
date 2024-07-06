@@ -10,11 +10,18 @@ from math import exp
 
 class ActivationFunction(object):
     
+    @classmethod
+    def subclasses_names(cls):
+        subclasses = cls.__subclasses__()
+        subclasses_names = [ c.__name__ for c in subclasses ]
+        return subclasses_names
+    
     def fx(self, x):
         pass
     
     def dx(self, x):
         pass
+    
     
 class StepAF(ActivationFunction):
     

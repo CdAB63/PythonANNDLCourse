@@ -1,45 +1,27 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Tue Jun 25 22:34:16 2024
+Created on Thu Jul  4 09:27:52 2024
 
 @author: cdab63
 """
 
-from activation_function import ActivationFunction, SigmoidAF
-from nlayer import NLayer
+from activation_function import SigmoidAF
+from nlayer import NLayer, NLayerSpec
 
 class NNetwork(object):
     
-    def __init__(self, layers=None, activation_functions=None, learning_rate=0.1):
+    def __init__(self):
+        self.__layers = []
         self.__head = None
         self.__tail = None
-        self.__learning_rate = learning_rate
-        self.__layers = []
-        if layers is None:
-            pass
-        elif all(isinstance(item, NLayer) for item in layers):
-            for layer in layers:
-                if self.__tail:
-                    layer.set_prev_layer(self.__tail)
-                self.add_layer(layer)
-        elif all(isinstance(item, int) for item in layers) and \
-             all(issubclass(type(item), ActivationFunction) for item in activation_functions) and \
-             len(layers) == len(activation_functions):
-                 for l, af in zip(layers, activation_functions):
-                     if self.__tail:
-                         layer = NLayer(l, activation_function=af, learning_rate=learning_rate, prev_layer=self.__tail)
-                     else:
-                         layer = NLayer(l, activation_function=af, learning_rate=learning_rate)
-                     self.add_layer(layer)
-        else:
-            raise ValueError('[ERROR] invalid parameters')
-        self.__errors = []
-        self.__precisions = []
+        self.__output = None
         
-    '''
-        ACCESSOR METHODS
-    '''
+    def nb_of_layers(self):
+        return len(self.__layers)
+    
+    def layer(self, idx):
+        return self.__layers[idx]
     
     def head(self):
         return self.__head
@@ -47,76 +29,65 @@ class NNetwork(object):
     def tail(self):
         return self.__tail
     
-    def layers(self):
-        return self.__layers
-    
-    def layer(self, idx):
-        return self.__layers[idx]
-    
-    def errors(self):
-        return self.__errors
-    
-    def precisions(self):
-        return self.__precisions
-
-    '''
-        NEURAL NETWORK SETUP METHODS
-    '''
-    
-    def create_layer(self, neurons, activation_function=SigmoidAF(),
-                     bias=0.0, learning_rate=0.1):
-        if isinstance(neurons, int):
-            layer = NLayer(neurons, 
-                           activation_function=activation_function, 
-                           bias=bias, learning_rate=learning_rate,
-                           prev_layer=self.__tail)
-        else:
-            layer = NLayer(len(neurons),
-                           activation_function=activation_function,
-                           bias=bias, learning_rate=learning_rate,
-                           prev_layer=self.__tail)
-            for w, n in zip(neurons, layer.neurons()):
-                n.set_weights(w)
-                
-        return layer
-    
-
-    def add_layer(self, layer):
-        if self.__layers:
-            if not self.__head or not self.__tail:
-                raise ValueError('[ERROR] inconsistent layers list')
-            if not layer.prev_layer() == self.__tail:
-                raise ValueError('[ERROR] layer.prev_layer and self.__tail do not match')
-            self.__layers.append(layer)
-            self.__tail = layer
-        else:
-            if self.__head or self.__tail:
-                raise ValueError('[ERROR] inconsistent layers list')
-            if layer.prev_layer():
-                raise ValueError('[ERROR] layer cannot be inserted in empty layers list if has prev_layer')
-            self.__layers.append(layer)
-            self.__head = layer
-            self.__tail = layer
-    
-    '''
-        NEURAL NETWORD EVALUATION (FEED) METHODS
-    '''
-    
-    def feed(self, inputs):
-        self.__output = self.__head.feed(inputs)
+    def output(self):
         return self.__output
     
-    '''
-        TRAINING METHODS
-    '''
+    def layer_output(self, idx):
+        if not self.__head:
+            raise Exception('[ERROR] empty network, no layers to return')
+        layer = self.__head
+        count = 0
+        while count < idx:
+            layer = layer.next_layer()
+            count += 1
+        return layer.output()
     
-    def backward_propagate_error(self, expected_outputs):
-        self.__tail.backward_propagate_error(expected_outputs)
+    def layer_n_output(self, idx):
+        if not self.__head:
+            raise Exception('[ERROR} empty network, no layers to return')
+        return self.__layers[idx].output()
+
+    def add_layer(self, layer):
+        if not isinstance(layer, NLayer):
+            raise ValueError(f'[ERROR] not a layer: {type(layer)}')
+        if not self.__tail is None:
+            layer.set_prev_layer(self.__tail)
+            self.__tail = layer
+        else:
+            if not self.__head is None:
+                raise ValueError('[ERROR] inconsistent network tail exists but head is None')
+            layer.set_prev_layer(None)
+            self.__head = layer
+            self.__tail = layer
+        layer.basic_set_next_layer(None)
+        self.__layers.append(layer)
         
-    def update_weights(self, initial_inputs):
-        self.__head.update_weights(initial_inputs)
+    def create_and_add_basic_layer(self, nb_of_neurons, activation_function=SigmoidAF(),
+                           learning_rate=0.1, bias=0.0):
+        layer = NLayer(nb_of_neurons, activation_function=activation_function,
+                       learning_rate=learning_rate, bias=bias,
+                       prev_layer=self.__tail)
+        self.add_layer(layer)
+   
+    def create_network_from_json(self, file_name):
+        spec = NLayerSpec()
+        with open(file_name, 'r') as json_file:
+            contents = json_file.readlines()
+            for line in contents:
+                spec.get_specs_from_string(line)
+                layer = NLayer(spec.nb_of_neurons(),
+                               weights_list=spec.weights_list(),
+                               activation_function=spec.activation_function(),
+                               learning_rate=spec.learning_rate(),
+                               biases=spec.bias(), prev_layer=self.__tail)
+                self.add_layer(layer)
+                
+    def feed(self, input_values):
+        if not self.__head:
+            raise Exception('[ERROR] cannot feed uninitialized neural network')
+        self.__output = self.__head.feed(input_values)
+        return self.__output
+                
+            
         
-    def train(self, some_inputs, desired_outputs):
-        self.feed(some_inputs)
-        self.backward_propagate_error(desired_outputs)
-        self.update_weights(some_inputs)
+    
