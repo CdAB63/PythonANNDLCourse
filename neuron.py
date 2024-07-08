@@ -35,7 +35,7 @@ class Neuron(object):
     def set_random_weights(self, number_of_weights):
         if number_of_weights < 1:
             raise ValueError(f'[ERROR] invalid number of weights: {number_of_weights}')
-        self.__weights = [ random.uniform(-1.0, 1.0) for _ in range(number_of_weights) ]
+        self.__weights = [ random.uniform(-10.0, 10.0) for _ in range(number_of_weights) ]
         
     def set_listed_weights(self, listed_weights):
         if not isinstance(listed_weights, list):
@@ -73,7 +73,7 @@ class Neuron(object):
     
     def set_bias(self, value):
         if value is None:
-            self.__bias = random.uniform(-1.0, 1.0)
+            self.__bias = random.uniform(-10.0, 10.0)
         elif not isinstance(value, (int, float)):
             raise ValueError(f'[ERROR] invalid bias: {value}')
         else:
