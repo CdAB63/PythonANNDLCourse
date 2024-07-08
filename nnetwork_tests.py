@@ -38,7 +38,7 @@ class NNetworkTestCase(unittest.TestCase):
         nnetwork = NNetwork()
         nnetwork.create_network_from_json('network04.json')
         training_set = [[[0.0, 0.0], [0.0]], [[0.0, 1.0], [1.0]], [[1.0, 0.0], [1.0]], [[1.0, 1.0], [0.0]]]
-        nnetwork.train(training_set, calculate_errors=True, plot_errors=True)
+        nnetwork.train(training_set, plot_errors=True, plot_precisions=True)
         self.assertAlmostEqual(nnetwork.feed([0.0, 0.0])[0], 0.0, delta=0.1)
         self.assertAlmostEqual(nnetwork.feed([0.0, 1.0])[0], 1.0, delta=0.1)
         self.assertAlmostEqual(nnetwork.feed([1.0, 0.0])[0], 1.0, delta=0.1)

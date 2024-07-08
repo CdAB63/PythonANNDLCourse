@@ -12,7 +12,7 @@ from activation_function import ActivationFunction, SigmoidAF
 
 class Neuron(object):
     
-    def __init__(self, weights, activation_function=SigmoidAF(), bias=0.0,
+    def __init__(self, weights, activation_function=SigmoidAF(), bias=None,
                  learning_rate=0.1):
         self.set_weights(weights)
         self.set_activation_function(activation_function)
@@ -35,7 +35,7 @@ class Neuron(object):
     def set_random_weights(self, number_of_weights):
         if number_of_weights < 1:
             raise ValueError(f'[ERROR] invalid number of weights: {number_of_weights}')
-        self.__weights = [ random.uniform(-10.0, 10.0) for _ in range(number_of_weights) ]
+        self.__weights = [ random.uniform(-1.0, 1.0) for _ in range(number_of_weights) ]
         
     def set_listed_weights(self, listed_weights):
         if not isinstance(listed_weights, list):
@@ -72,9 +72,12 @@ class Neuron(object):
         return self.__bias
     
     def set_bias(self, value):
-        if not isinstance(value, (int, float)):
+        if value is None:
+            self.__bias = random.uniform(-1.0, 1.0)
+        elif not isinstance(value, (int, float)):
             raise ValueError(f'[ERROR] invalid bias: {value}')
-        self.__bias = value
+        else:
+            self.__bias = value
         
     def learning_rate(self):
         return self.__learning_rate

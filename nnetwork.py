@@ -18,8 +18,9 @@ class NNetwork(object):
         self.__head = None
         self.__tail = None
         self.__output = None
-        self.__precisions = None
+        self.__precisions = []
         self.__errors = []
+        self.__error = None
         
     def nb_of_layers(self):
         return len(self.__layers)
@@ -98,6 +99,26 @@ class NNetwork(object):
         self.__error = error
         return error
     
+    def calculate_precision(self, precision, expected_values):
+        if not self.__output or not self.__errors:
+            raise Exception('[ERROR] network not trained. Not possible to evaluate precisions')
+        if not precision is None:
+            if not isinstance(precision, float):
+                raise ValueError(f'[ERROR] precision should be float, not {precision}')
+            if precision < 0.0:
+                raise ValueError(f'[ERROR] invalid precision: {precision}')
+            if not isinstance(expected_values, list) or len(expected_values) != len(self.__output):
+                raise ValueError(f'[ERROR] invalid expected_values: {expected_values}')
+            prc = 0.0
+            for o, e in zip(self.__output, expected_values):
+                if abs(o - e) <= precision:
+                    prc += 1
+            prc /= len(expected_values)
+            self.__precisions.append(prc)
+            return prc
+        else:
+            return None
+            
     def average_error(self):
         return self.__error
                 
@@ -114,9 +135,19 @@ class NNetwork(object):
         self.__head.update_weights(initial_inputs)
         
     def plot_average_errors(self):
-        plt.plot(self.__errors, label='Average Training Errors')
+        err = None
+        prc = None
+        if self.__errors:
+            err = plt.plot(self.__errors, label='Average Training Errors')
+        if self.__precisions:
+            prc = plt.plot(self.__precisions, label='mAP')
+        if err and prc:
+            plt.legend(['Average Error', 'mAP' ])
+        elif err:
+            plt.ylabel('Average Error')
+        elif prc:
+            plt.ylabel('Average Precision')
         plt.xlabel('Epochs')
-        plt.ylabel('Average Error')
         plt.show()
         
     def train_epoch(self, some_inputs, expected_outputs, precisions=None):
@@ -124,12 +155,15 @@ class NNetwork(object):
         self.backward_propagate_error(expected_outputs)
         self.update_weights(some_inputs)
         
-    def train(self, training_set, epochs=150000, calculate_errors=False, plot_errors=False, precisions=None, plot_precisions=False):
+    def train(self, training_set, epochs=150000, plot_errors=False, precision=0.1, plot_precisions=False):
         for epoch in range(epochs):
             for training_data in training_set:
                 self.train_epoch(training_data[0], training_data[1])
-            if calculate_errors:
+            if plot_errors:
                 self.calculate_average_error()
                 self.__errors.append(self.average_error())
-        if calculate_errors and plot_errors:
+            if plot_precisions:
+                self.calculate_precision(precision, training_data[1])
+        if plot_errors or plot_precisions:
             self.plot_average_errors()
+            
