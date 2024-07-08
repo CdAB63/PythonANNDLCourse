@@ -34,5 +34,20 @@ class NNetworkTestCase(unittest.TestCase):
         self.assertEqual(nnetwork.layer(1).output(), [ 4.0, 4.0, 4.0 ])
         self.assertEqual(nnetwork.layer(0).output(), [ 2.0, 2.0 ])
         
+    def test_train_xor(self):
+        nnetwork = NNetwork()
+        nnetwork.create_network_from_json('network04.json')
+        training_set = [[[0.0, 0.0], [0.0]], [[0.0, 1.0], [1.0]], [[1.0, 0.0], [1.0]], [[1.0, 1.0], [0.0]]]
+        nnetwork.train(training_set, calculate_errors=True, plot_errors=True)
+        self.assertAlmostEqual(nnetwork.feed([0.0, 0.0])[0], 0.0, delta=0.1)
+        self.assertAlmostEqual(nnetwork.feed([0.0, 1.0])[0], 1.0, delta=0.1)
+        self.assertAlmostEqual(nnetwork.feed([1.0, 0.0])[0], 1.0, delta=0.1)
+        self.assertAlmostEqual(nnetwork.feed([1.0, 1.0])[0], 0.0, delta=0.1)
+        print()
+        print(f'[0.0, 0.0]: {nnetwork.feed([0.0, 0.0])[0]}')
+        print(f'[0.0, 1.0]: {nnetwork.feed([0.0, 1.0])[0]}')
+        print(f'[1.0, 0.0]: {nnetwork.feed([1.0, 0.0])[0]}')
+        print(f'[1.0, 1.0]: {nnetwork.feed([1.0, 1.0])[0]}')
+        
 if __name__ == '__main__':
     unittest.main()

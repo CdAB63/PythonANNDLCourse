@@ -35,7 +35,7 @@ class Neuron(object):
     def set_random_weights(self, number_of_weights):
         if number_of_weights < 1:
             raise ValueError(f'[ERROR] invalid number of weights: {number_of_weights}')
-        self.__weights = [ random.uniform(-1.0, 1.0) for _ in range(number_of_weights) ]
+        self.__weights = [ random.uniform(-10.0, 10.0) for _ in range(number_of_weights) ]
         
     def set_listed_weights(self, listed_weights):
         if not isinstance(listed_weights, list):
@@ -107,18 +107,32 @@ class Neuron(object):
     '''
     
     def adjust_error(self, value):
+        if not self.__output:
+            raise Exception('[ERROR] cannot calculate error in an unfed neuron')
         self.__error = value - self.__output
+        return self.__error
         
     def adjust_delta(self):
+        if not self.__output:
+            raise Exception('[ERROR] cannot adjust delta in an unfed neuron')
+        if not self.__error:
+            raise Exception('[ERROR] cannot adjust delta if error was not calculated')
         self.__delta = self.__error * self.af_dx(self.__output)
+        return self.__delta
         
     def adjust_delta_with(self, an_error):
+        if not self.__output:
+            raise Exception('[ERROR] cannot adjust delta in an unfed neuron')
         self.__delta = an_error * self.af_dx(self.__output)
+        return self.__delta
         
     def adjust_bias(self):
         self.__bias += self.__learning_rate * self.__delta
+        return self.__bias
         
     def adjust_weights(self, inputs):
+        if not isinstance(inputs, list) or len(inputs) != len(self.__weights):
+            raise Exception(f'[ERROR] invalid inputs.\n{inputs}')
         for an_input, idx in zip(inputs, range(len(inputs))):
             self.__weights[idx] += self.__learning_rate * self.__delta * an_input
         

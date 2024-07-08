@@ -100,7 +100,10 @@ class LeakyReLU(ActivationFunction):
 class SigmoidAF(ActivationFunction):
     
     def fx(self, x):
-        return 1.0 / (1 + exp(-x))
+        try:
+            return 1.0 / (1 + exp(-x))
+        except:
+            raise Exception(f'[ERROR] overflow for x: {x}')
     
     def dx(self, x):
         sigma = self.fx(x)

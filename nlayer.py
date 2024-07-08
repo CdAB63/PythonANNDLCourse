@@ -30,6 +30,8 @@ class NLayerSpec(object):
         self.__activation_function_name = 'SigmoidAF'
         self.__activation_function = SigmoidAF()
         self.__bias = 0.0
+        self.__error = None
+        self.__output = None
     
     def nb_of_neurons(self):
         return self.__nb_of_neurons
@@ -217,7 +219,8 @@ class NLayer(object):
             raise Exception('[ERROR] layer must be fed prior to error calculation')
         if self.__nb_of_neurons != len(expected_values):
             raise Exception(f'[ERROR] invalid error vector (size mismatch): {len(expected_values)}')
-        self.__error = [ exp - out for exp, out in zip(expected_values, self.__output) ]
+        self.__error = [ neuron.adjust_error(ev) for neuron, ev in zip (self.__neurons, expected_values) ]
+        #self.__error = [ exp - out for exp, out in zip(expected_values, self.__output) ]
 
     # return the neuron(s)
     def neuron(self, idx=None):
@@ -269,3 +272,42 @@ class NLayer(object):
         if self.__next_layer:
             output = self.__next_layer.feed(output)
         return output
+    
+    # backward error propatation
+    def backward_propagate_error(self, expected_values):
+        if not self.__output: # check if the network was fed
+            raise Exception('[ERROR] cannot back propagate over a non fed network')
+        if expected_values: # we are at the output layer
+            if len(expected_values) != len(self.__output):
+                raise Exception('[ERROR] size mismatch between expected and outputs')
+            self.__error = []
+            for ev, op, idx in zip (expected_values, self.__output, range(len(expected_values))):
+                the_error = ev - op
+                self.__error.append(the_error)
+                self.neuron(idx).adjust_delta_with(the_error)
+            if self.__prev_layer:
+                self.__prev_layer.backward_propagate_error(None)
+        else: # we are at hidden layer
+            self.__error = []
+            for neuron, idx in zip(self.__neurons, range(len(self.__neurons))):
+                the_error = 0.0
+                for next_neuron in self.__next_layer.neuron(None):
+                    the_error += next_neuron.weight(idx) * next_neuron.delta()
+                self.__error.append(the_error)
+                neuron.adjust_delta_with(the_error)
+            if self.__prev_layer:
+                self.__prev_layer.backward_propagate_error(None)
+                
+    # update weights
+    def update_weights(self, inputs):
+        if inputs: # we are at the first layer
+            inp = inputs.copy()
+            for neuron in self.__neurons:
+                neuron.adjust_weights(inp)
+                neuron.adjust_bias()
+            if self.__next_layer:
+                self.__next_layer.update_weights(None)
+        else: # we are in hidden or output layer
+            inp = self.__prev_layer.output(None)
+            self.update_weights(inp)
+            
