@@ -13,7 +13,8 @@ from activation_function import ActivationFunction, SigmoidAF
 class Neuron(object):
     
     def __init__(self, weights, activation_function=SigmoidAF(), bias=None,
-                 learning_rate=0.1):
+                 learning_rate=0.1, dispersion=(-1.0, 1.0)):
+        self.set_dispersion(dispersion)
         self.set_weights(weights)
         self.set_activation_function(activation_function)
         self.set_bias(bias)
@@ -35,7 +36,9 @@ class Neuron(object):
     def set_random_weights(self, number_of_weights):
         if number_of_weights < 1:
             raise ValueError(f'[ERROR] invalid number of weights: {number_of_weights}')
-        self.__weights = [ random.uniform(-10.0, 10.0) for _ in range(number_of_weights) ]
+        low  = self.dispersion()[0]
+        high = self.dispersion()[1]
+        self.__weights = [ random.uniform(low, high) for _ in range(number_of_weights) ]
         
     def set_listed_weights(self, listed_weights):
         if not isinstance(listed_weights, list):
@@ -73,7 +76,9 @@ class Neuron(object):
     
     def set_bias(self, value):
         if value is None:
-            self.__bias = random.uniform(-10.0, 10.0)
+            low  = self.dispersion()[0]
+            high = self.dispersion()[1]
+            self.__bias = random.uniform(low, high)
         elif not isinstance(value, (int, float)):
             raise ValueError(f'[ERROR] invalid bias: {value}')
         else:
@@ -87,6 +92,20 @@ class Neuron(object):
             raise ValueError(f'[ERROR] invalid learning rate: {value}')
         self.__learning_rate = value
         
+    def set_dispersion(self, dispersion):
+        try:
+            low = dispersion[0]
+            high = dispersion[1]
+        except:
+            raise ValueError(f'[ERROR] dispersion should be a tuple of floats, not {dispersion}')
+        if low >= high:
+            raise ValueError(f'[ERROR] invalid low {low} high {high} tuple')
+        self.__dispersion = (low, high)
+        return self.__dispersion
+        
+    def dispersion(self):
+        return self.__dispersion
+    
     def output(self):
         return self.__output
     

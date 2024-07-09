@@ -1,0 +1,3 @@
+{ "neurons" : 2, "weights" : [ [-32.31501984416871, 32.33722211630868], [91.13404549120695, -91.08755215041319] ], "activation_function" : "SigmoidAF", "learning_rate" : 0.1 }
+{ "neurons" : 3, "weights" : [ [-4.026060780943091, -12.684106956374464], [11.147705234837682, -0.26009124416631973], [-7.7633289754230965, -24.63668232256552] ], "activation_function" : "SigmoidAF", "learning_rate" : 0.1 }
+{ "neurons" : 1, "weights" : [ [13.744974912465986, -11.807795861582152, 18.569544975981355] ], "activation_function" : "SigmoidAF", "learning_rate" : 0.1 }

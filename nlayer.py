@@ -6,6 +6,7 @@ Created on Wed Jul  3 10:20:01 2024
 @author: cdab63
 """
 
+import sys
 import json
 
 import activation_function
@@ -25,6 +26,7 @@ class NLayerSpec(object):
     '''            
     def __init__(self):
         self.__nb_of_neurons = None
+        self.__dispersion = (-1.0, 1.0)
         self.__weights_list = None
         self.__learning_rate = 0.1
         self.__activation_function_name = 'SigmoidAF'
@@ -36,11 +38,17 @@ class NLayerSpec(object):
     def nb_of_neurons(self):
         return self.__nb_of_neurons
     
+    def dispersion(self):
+        return self.__dispersion
+    
     def weights_list(self):
         return self.__weights_list
     
     def learning_rate(self):
         return self.__learning_rate
+    
+    def activation_function_name(self):
+        return self.__activation_function_name
     
     def activation_function(self):
         return self.__activation_function
@@ -57,6 +65,20 @@ class NLayerSpec(object):
         
         try:
             self.__weights_list = contents['weights_list']
+        except:
+            pass
+        try:
+            self.__dispersion = contents['dispersion']
+            if not isinstance(self.__dispersion, list):
+                print(f'[ERROR] dispersion should be a list, not {self.__dispersion}', file=sys.stderr)
+                raise ValueError(f'[ERROR] dispersion should be a list, not {self.__dispersion}')
+            if not len(self.__dispersion) == 2 or \
+               not isinstance(self.__dispersion[0], float) or \
+               not isinstance(self.__dispersion[1], float):
+                   print(f'[ERROR] invalid dispersion {self.__dispersion}', file=sys.stderr)
+                   raise ValueError(f'[ERROR] invalid dispersion {self.__dispersion}')
+            if not self.__dispersion[0] < self.__dispersion[1]:
+               print(f'[ERROR] invalid dispersion {self.__dispersion}')
         except:
             pass
         try:
@@ -96,19 +118,22 @@ class NLayer(object):
     
     def __init__(self, neurons, weights_list=None, 
                  activation_function=SigmoidAF(), 
-                 learning_rate=0.1, biases=None,
-                 prev_layer=None, next_layer=None):
+                 learning_rate=0.1, dispersion=(-1.0, 1.0),
+                 biases=None, prev_layer=None, next_layer=None):
         # Check parameters
         if not isinstance(neurons, int) or neurons < 1:
             raise ValueError(f'[ERROR] invalid number of neurons {neurons}')
         if not issubclass(type(activation_function), ActivationFunction):
             raise ValueError(f'[ERROR] invalid activation function class: {type(activation_function)}')
+        self.__activation_function = activation_function
+        self.__activation_function_name = type(activation_function).__name__
         # Check prev_layer & next_layer
         self.check_layer(prev_layer)
         self.check_layer(next_layer)
         # Check the learning_rate (0.0 < lr < 1.0)
         if not isinstance(learning_rate, float) or learning_rate <= 0.0 or learning_rate >= 1.0:
             raise ValueError(f'[ERROR] invalid learning_rate: {learning_rate}')
+        self.__learning_rate = learning_rate
         # Set neurons parameters:
         if prev_layer:
             self.__nb_of_weights = prev_layer.nb_of_neurons()
@@ -130,7 +155,7 @@ class NLayer(object):
         if weights_list:
             self.__neurons = [ Neuron(weights_list[idx], activation_function=activation_function, learning_rate=learning_rate) for idx in range(neurons) ]
         else:
-            self.__neurons = [ Neuron(self.__nb_of_weights, activation_function=activation_function, learning_rate=learning_rate) for _ in range(neurons) ]
+            self.__neurons = [ Neuron(self.__nb_of_weights, dispersion=dispersion, activation_function=activation_function, learning_rate=learning_rate) for _ in range(neurons) ]
 
         # set the bias
         if not biases is None:
@@ -148,6 +173,15 @@ class NLayer(object):
 
     def nb_of_weights(self):
         return self.__nb_of_weights
+    
+    def activation_function(self):
+        return self.__activation_function
+    
+    def activation_function_name(self):
+        return self.__activation_function_name
+    
+    def learning_rate(self):
+        return self.__learning_rate
 
     def check_layer(self, layer):
         if layer:
@@ -258,7 +292,19 @@ class NLayer(object):
                 raise ValueError('[ERROR] weights must be floats')
         for n, wgts in zip(self.__neurons, list_of_weights):
             n.set_weights(wgts)
-            
+    
+    def save_to_json(self, json_file):
+        line = '{ "neurons" : ' + str(len(self.__neurons)) + ', '
+        line += '"weights" : [ '
+        for neuron, idx in zip(self.__neurons, range(len(self.__neurons))):
+            line += str(neuron.weights())
+            if idx + 1 < len(self.__neurons):
+                line += ', '
+        line += ' ], "activation_function" : "' + self.activation_function_name() + '", '
+        line += '"learning_rate" : ' + str(self.learning_rate()) + " }\n"
+        json_file.write(line)
+        print(line)
+        
     # feed the layer
     def feed(self, input_values):
         if not isinstance(input_values, list):

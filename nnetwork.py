@@ -82,10 +82,23 @@ class NNetwork(object):
                 spec.get_specs_from_string(line)
                 layer = NLayer(spec.nb_of_neurons(),
                                weights_list=spec.weights_list(),
+                               dispersion = spec.dispersion(),
                                activation_function=spec.activation_function(),
                                learning_rate=spec.learning_rate(),
                                biases=spec.bias(), prev_layer=self.__tail)
                 self.add_layer(layer)
+                
+    def save_network_to_json(self, file_name='network.json'):
+        if not self.__head:
+            raise Exception('[ERROR] cannot save empty network')
+        position = self.__head
+        network_file = open(file_name, 'w')
+        while True:
+            position.save_to_json(network_file)
+            position = position.next_layer()
+            if position is None:
+                break
+        network_file.close()
                 
     def calculate_average_error(self):
         if not self.__tail:
@@ -155,7 +168,7 @@ class NNetwork(object):
         self.backward_propagate_error(expected_outputs)
         self.update_weights(some_inputs)
         
-    def train(self, training_set, epochs=150000, plot_errors=False, precision=0.1, plot_precisions=False):
+    def train(self, training_set, epochs=2000, plot_errors=False, precision=0.1, plot_precisions=False):
         for epoch in range(epochs):
             for training_data in training_set:
                 self.train_epoch(training_data[0], training_data[1])
